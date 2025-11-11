@@ -1,64 +1,110 @@
 # DEMO: Exploring the Google Cloud Console and Cloud Shell
 
 ## 🎯 Objective
-Become familiar with the graphical interface (Console) and the command-line tool (Cloud Shell) in Google Cloud Platform (GCP) to manage cloud resources.
+Gain hands-on experience with the graphical interface (Console) and the command-line tool (Cloud Shell) in Google Cloud Platform (GCP) to manage and deploy basic cloud resources.
 
 ---
 
 ## 🖥️ 1. Accessing the Google Cloud Console
 
+### Step-by-Step Walkthrough
+
 1. Log in to [Google Cloud Console](https://console.cloud.google.com).
-2. Check the **active project** at the top bar (Project ID).
-3. Explore the main sections from the left-hand menu:
+2. Confirm your **active project** at the top navigation bar (check the Project ID).
+3. From the left-hand menu, explore the main sections:
    - **Compute Engine:** Manage virtual machines.
    - **Cloud Storage:** Manage object storage.
-   - **IAM & Admin:** Control users and permissions.
-   - **Billing:** View costs and budgets.
-   - **APIs & Services:** Enable APIs and manage credentials.
+   - **IAM & Admin:** Configure users, roles, and permissions.
+   - **Billing:** View budgets and spending reports.
+   - **APIs & Services:** Enable APIs and create credentials.
 
-4. In the main navigation panel, you can:
-   - Search for services using the top search bar.
-   - Monitor the global status of your resources.
-   - Check alerts and system notifications.
+4. In the main panel, you can:
+   - Use the **search bar** to quickly find services.
+   - Monitor **resource health** and current activity.
+   - Review **notifications** and recent operations.
 
-### 🧩 Suggested Exercise
-- Enable the **Compute Engine API**.
-- Create a **basic VM instance** from the console (choose region, machine type, and OS).
+### 🧩 Basic Demonstrations
+
+#### 🔹 Create a Virtual Machine from the Console
+1. Go to **Compute Engine > VM Instances**.
+2. Click **Create Instance**.
+3. Select a region (e.g., *us-central1*) and zone (e.g., *us-central1-a*).
+4. Choose a machine type (e.g., *e2-micro*).
+5. Select an image such as **Debian 12**.
+6. Click **Create**.
+
+👉 **Result:** A new VM will appear in your instance list, ready to connect via SSH from the browser.
+
+#### 🔹 Create a Cloud Storage Bucket
+1. Navigate to **Cloud Storage > Buckets**.
+2. Click **Create Bucket**.
+3. Give it a globally unique name, e.g., `my-demo-bucket-123`.
+4. Select a region (e.g., *us-central1*).
+5. Keep access control as **Uniform** and click **Create**.
+
+👉 **Result:** Your bucket is ready to store files, images, or website content.
+
+#### 🔹 Enable an API
+1. Go to **APIs & Services > Library**.
+2. Search for **Cloud Vision API**.
+3. Click **Enable**.
+
+👉 **Result:** The API becomes available for use via Cloud Shell or client libraries.
 
 ---
 
 ## 💻 2. Using Cloud Shell
 
-Cloud Shell provides a preconfigured Linux environment with GCP management tools ready to use.
+Cloud Shell provides a secure, preconfigured Debian Linux environment with the GCP SDK (`gcloud`, `gsutil`, and `bq`) already installed.
 
-1. Click the **>_** icon in the upper-right corner to open Cloud Shell.
-2. Wait for the Debian environment to initialize.
-3. Verify your authenticated account and active project:
+### Step-by-Step Walkthrough
+
+1. Open Cloud Shell by clicking the **>_** icon in the top-right corner.
+2. Wait for initialization.
+3. Verify authentication and project configuration:
    ```bash
    gcloud auth list
    gcloud config list project
    ```
-4. List available instances:
+4. List current VM instances:
    ```bash
    gcloud compute instances list
    ```
-5. Create a working folder and a test file:
+5. View all buckets:
    ```bash
-   mkdir demo-cloudshell && cd demo-cloudshell
-   echo "Hello from Cloud Shell" > greeting.txt
-   cat greeting.txt
-   ```
-6. Open the **integrated editor** (similar to VS Code):
-   ```bash
-   cloudshell open-editor
+   gsutil ls
    ```
 
-### 🧩 Suggested Exercise
-- Create a startup script to automate VM creation.
-- Connect via SSH to the created instance:
-   ```bash
-   gcloud compute ssh my-vm-demo --zone=us-central1-a
-   ```
+### 🧩 Basic Demonstrations
+
+#### 🔹 Create a Virtual Machine via Command Line
+```bash
+gcloud compute instances create my-shell-vm \
+  --zone=us-central1-a \
+  --machine-type=e2-micro \
+  --image-family=debian-12 \
+  --image-project=debian-cloud
+```
+👉 **Result:** A new VM will be created with minimal configuration.
+
+#### 🔹 Upload a File to Cloud Storage
+```bash
+echo "Hello Cloud!" > hello.txt
+gsutil cp hello.txt gs://my-demo-bucket-123
+```
+👉 **Result:** The file is uploaded to your bucket and can be viewed in the Console.
+
+#### 🔹 Describe a Resource
+```bash
+gcloud compute instances describe my-shell-vm --zone=us-central1-a
+```
+👉 **Result:** Returns details such as IP address, machine type, and disk configuration.
+
+#### 🔹 Connect via SSH
+```bash
+gcloud compute ssh my-shell-vm --zone=us-central1-a
+```
+👉 **Result:** Opens an SSH terminal session directly from your browser.
 
 ---
 
@@ -70,13 +116,18 @@ Cloud Shell provides a preconfigured Linux environment with GCP management tools
 | **Ease of Use** | Ideal for beginners | Ideal for technical users |
 | **Automation** | Limited | High (scripts, gcloud, Terraform) |
 | **Requirements** | Web browser only | Browser with Cloud Shell enabled |
-| **API Access** | Manual (via GUI) | Direct via `gcloud` commands |
+| **API Access** | Manual (GUI) | Direct via `gcloud` commands |
 
 ---
 
 ## ✅ Final Outcome
-Students will have explored both the **Web Console** and **Cloud Shell**, understanding how to use both tools to manage projects, resources, and automate basic tasks within Google Cloud.
+By completing these demonstrations, students will:
+- Understand how to navigate and use the **Google Cloud Console**.
+- Deploy resources like **VMs** and **storage buckets**.
+- Use **Cloud Shell** for basic automation and resource management.
+- Recognize when to choose between GUI or CLI workflows.
 
 ---
 
-> 🧠 **Tip:** A good practice is to alternate between the Console and Cloud Shell depending on the task. Use the Console for visualization and Cloud Shell for automation.
+> 🧠 **Tip:** Start with the Console for visualization, then move to Cloud Shell as you gain confidence to automate your workflow using commands and scripts.
+
