@@ -230,7 +230,8 @@ Para evitar costes innecesarios, elimine todos los recursos creados:
 ### Eliminar VM
 
 ```bash
-gcloud compute instances delete demo-vm   --zone=us-central1-a --quiet
+gcloud compute instances delete demo-vm \  
+  --zone=us-central1-a --quiet
 ```
 
 ### Eliminar regla de firewall
@@ -240,12 +241,14 @@ gcloud compute firewall-rules delete allow-http --quiet
 
 ### Eliminar Cloud Function
 ```bash
-gcloud functions delete helloWorld   --region=us-central1 --quiet
+gcloud functions delete helloWorld \  
+  --region=us-central1 --quiet
 ```
 
 ### Eliminar Cloud Run service
 ```bash
-gcloud run services delete demo-cloudrun   --region=us-central1 --quiet
+gcloud run services delete demo-cloudrun \  
+  --region=us-central1 --quiet
 ```
 
 ### Si creó un archivo MIG o una plantilla:

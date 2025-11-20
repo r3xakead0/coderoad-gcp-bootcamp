@@ -48,7 +48,9 @@ Useful for backups and quick migrations.
 Example:
 
 ```bash
-gcloud compute disks snapshot my-disk   --snapshot-names=my-disk-snap   --zone=us-central1-a
+gcloud compute disks snapshot my-disk \
+  --snapshot-names=my-disk-snap \
+  --zone=us-central1-a
 ```
 
 ---
@@ -84,7 +86,12 @@ Features:
 ### 2.2 Autoscaling Example
 
 ```bash
-gcloud compute instance-groups managed set-autoscaling my-mig   --max-num-replicas=5   --min-num-replicas=1   --target-cpu-utilization=0.6   --cool-down-period=90   --zone=us-central1-a
+gcloud compute instance-groups managed set-autoscaling my-mig \
+  --max-num-replicas=5 \
+  --min-num-replicas=1 \
+  --target-cpu-utilization=0.6 \
+  --cool-down-period=90 \
+  --zone=us-central1-a
 ```
 
 ---
@@ -105,7 +112,10 @@ Triggers:
 Example:
 
 ```bash
-gcloud functions deploy helloWorld   --runtime=nodejs20   --trigger-http   --allow-unauthenticated
+gcloud functions deploy helloWorld \
+  --runtime=nodejs20 \
+  --trigger-http \
+  --allow-unauthenticated
 ```
 
 ---
@@ -118,7 +128,10 @@ Supports any dockerized application.
 Example:
 
 ```bash
-gcloud run deploy my-app   --source=.   --region=us-central1   --allow-unauthenticated
+gcloud run deploy my-app \
+  --source=. \
+  --region=us-central1 \
+  --allow-unauthenticated
 ```
 
 ---
@@ -128,17 +141,25 @@ gcloud run deploy my-app   --source=.   --region=us-central1   --allow-unauthent
 ### 4.1 Launch a Simple VM
 
 ```bash
-gcloud compute instances create demo-vm   --zone=us-central1-a   --machine-type=e2-micro   --image-family=debian-12   --image-project=debian-cloud   --tags=http-server   --metadata=startup-script='#!/bin/bash
+gcloud compute instances create demo-vm \
+  --zone=us-central1-a \
+  --machine-type=e2-micro \
+  --image-family=debian-12 \
+  --image-project=debian-cloud \
+  --tags=http-server \
+  --metadata=startup-script='#!/bin/bash
     apt-get update
     apt-get install -y apache2
-    echo "Hello from Compute Engine" > /var/www/html/index.html
+    echo "Hola desde Compute Engine" > /var/www/html/index.html
   '
 ```
 
 Firewall rule:
 
 ```bash
-gcloud compute firewall-rules create allow-http   --allow=tcp:80   --target-tags=http-server
+gcloud compute firewall-rules create allow-http \
+  --allow=tcp:80 \
+  --target-tags=http-server
 ```
 
 ---
@@ -156,7 +177,11 @@ exports.helloWorld = (req, res) => {
 Deploy:
 
 ```bash
-gcloud functions deploy helloWorld   --runtime=nodejs20   --trigger-http   --allow-unauthenticated   --region=us-central1
+gcloud functions deploy helloWorld \
+  --runtime=nodejs20 \
+  --trigger-http \
+  --allow-unauthenticated \
+  --region=us-central1
 ```
 
 ---
@@ -173,7 +198,10 @@ app.listen(process.env.PORT || 8080)
 Deploy:
 
 ```bash
-gcloud run deploy demo-cloudrun   --source=.   --allow-unauthenticated   --region=us-central1
+gcloud run deploy demo-cloudrun \
+  --source=. \
+  --allow-unauthenticated \
+  --region=us-central1
 ```
 
 ---
@@ -184,7 +212,8 @@ To avoid unnecessary costs, delete all created resources:
 
 ### Delete VM
 ```bash
-gcloud compute instances delete demo-vm   --zone=us-central1-a --quiet
+gcloud compute instances delete demo-vm \  
+  --zone=us-central1-a --quiet
 ```
 
 ### Delete firewall rule
@@ -194,12 +223,14 @@ gcloud compute firewall-rules delete allow-http --quiet
 
 ### Delete Cloud Function
 ```bash
-gcloud functions delete helloWorld   --region=us-central1 --quiet
+gcloud functions delete helloWorld  \  
+  --region=us-central1 --quiet
 ```
 
 ### Delete Cloud Run service
 ```bash
-gcloud run services delete demo-cloudrun   --region=us-central1 --quiet
+gcloud run services delete demo-cloudrun \  
+  --region=us-central1 --quiet
 ```
 
 ### If you created a MIG or template:
