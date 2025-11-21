@@ -53,6 +53,8 @@ gcloud compute disks snapshot my-disk \
   --zone=us-central1-a
 ```
 
+---
+
 ### 1.4 Instance Templates
 
 Una plantilla de instancia define la configuración base para múltiples VMs:
@@ -187,33 +189,140 @@ gcloud compute firewall-rules create allow-http \
 
 ### 4.2 Desplegar una app en Cloud Function
 
-index.js
+#### Estructura del proyecto
 
+```text
+demo-cloud-function/
+├── index.js
+└── package.json
+```
+
+#### Codigo de la aplicación
+
+index.js
 ```javascript
-exports.helloWorld = (req, res) => {
-  res.send("Hola desde Cloud Functions 🚀");
+// Cloud Function HTTP (2nd gen)
+// Endpoint: GET /  (y también POST)
+exports.helloHttp = (req, res) => {
+  // Nombre desde query (?name=Oshin), body JSON, o valor por defecto
+  const name =
+    req.query.name ||
+    (req.body && req.body.name) ||
+    "Cloud Engineer";
+
+  const response = {
+    message: `Hola, ${name}! 👋`,
+    service: "Cloud Functions (2nd gen)",
+    method: req.method,
+    timestamp: new Date().toISOString()
+  };
+
+  // Log en Cloud Logging
+  console.log("Petición recibida:", {
+    name,
+    ip: req.ip,
+    userAgent: req.get("User-Agent")
+  });
+
+  res.status(200).json(response);
 };
 ```
 
 package.json
-
 ```json
 {
-  "name": "demo-function",
+  "name": "demo-cloud-function",
   "version": "1.0.0",
-  "main": "index.js"
+  "description": "Demo completa de Cloud Functions HTTP 2nd gen",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js" // opcional, solo si quisieras probar con Express
+  },
+  "dependencies": {}
 }
 ```
 
-Desplegar:
+#### Desplegar la Cloud Function (2nd gen):
 
-```bash
-gcloud functions deploy helloWorld \
-  --runtime=nodejs20 \
-  --trigger-http \
-  --allow-unauthenticated \
-  --region=us-central1
-```
+- Asegúrate de tener el proyecto configurado:
+
+  ```bash
+  gcloud config set project TU_PROJECT_ID
+  ```
+
+- Activa las APIs si no lo hiciste antes:
+
+  ```bash
+  gcloud services enable \
+    cloudfunctions.googleapis.com \
+    cloudbuild.googleapis.com \
+    artifactregistry.googleapis.com
+  ```
+
+- Ahora despliega la función:
+
+  ```bash
+  gcloud functions deploy helloHttp \
+    --gen2 \
+    --runtime=nodejs20 \
+    --region=us-central1 \
+    --trigger-http \
+    --allow-unauthenticated
+  ```
+
+- Explicación rápida:
+
+  ```text
+	--gen2 → usa Cloud Functions 2nd gen (sobre Cloud Run + Eventarc).
+	--runtime=nodejs20 → versión del runtime.
+	--trigger-http → función HTTP.
+	--allow-unauthenticated → cualquiera puede invocarla (tipo API pública).
+  ```
+
+#### Prueba:
+
+- Desde el navegador
+
+  ```text
+  https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp
+  ```
+
+  ```json
+  {
+    "message": "Hola, Cloud Engineer! 👋",
+    "service": "Cloud Functions (2nd gen)",
+    "method": "GET",
+    "timestamp": "2025-11-21T00:00:00.000Z"
+  }
+  ```
+
+- Con parámetro name en la query
+
+  ```text
+  https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp?name=User
+  ```
+
+  ```json
+  {
+    "message": "Hola, User! 👋",
+    ...
+  }
+  ```
+
+- Con curl enviando JSON en el body
+
+  ```bash
+  curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Student GCP"}' \
+    https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp
+  ```
+
+- Ver logs en Cloud Logging
+
+  ```bash
+  gcloud functions logs read helloHttp --gen2 --region=us-central1
+  ```
 
 ---
 
@@ -366,7 +475,8 @@ gcloud run deploy demo-cloudrun-docker \
   --allow-unauthenticated
 ```
 
-#### Test:
+#### Prueba:
+
 ```bash
 https://demo-cloudrun-docker-xxxxxxxxx-uc.a.run.app
 ```

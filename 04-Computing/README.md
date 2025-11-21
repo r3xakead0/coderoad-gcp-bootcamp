@@ -189,33 +189,140 @@ gcloud compute firewall-rules create allow-http \
 
 ### 4.2 Deploy a Cloud Function
 
-index.js
+#### Project structure
 
+```text
+demo-cloud-function/
+├── index.js
+└── package.json
+```
+
+#### Application code
+
+index.js
 ```javascript
-exports.helloWorld = (req, res) => {
-  res.send("Hello from Cloud Functions 🚀");
+// Cloud Function HTTP (2nd gen)
+// Endpoint: GET /  (y también POST)
+exports.helloHttp = (req, res) => {
+  // Name from query (?name=user), JSON body, or default value
+  const name =
+    req.query.name ||
+    (req.body && req.body.name) ||
+    "Cloud Engineer";
+
+  const response = {
+    message: `Hello, ${name}! 👋`,
+    service: "Cloud Functions (2nd gen)",
+    method: req.method,
+    timestamp: new Date().toISOString()
+  };
+
+  // Log en Cloud Logging
+  console.log("Request received:", {
+    name,
+    ip: req.ip,
+    userAgent: req.get("User-Agent")
+  });
+
+  res.status(200).json(response);
 };
 ```
 
 package.json
-
 ```json
 {
-  "name": "demo-function",
+  "name": "demo-cloud-function",
   "version": "1.0.0",
-  "main": "index.js"
+  "description": "Cloud Functions HTTP 2nd gen full demo",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js" // Optional, only if you want to try Express
+  },
+  "dependencies": {}
 }
 ```
 
-Deploy:
+#### Deploy the Cloud Function (2nd gen):
 
-```bash
-gcloud functions deploy helloWorld \
-  --runtime=nodejs20 \
-  --trigger-http \
-  --allow-unauthenticated \
-  --region=us-central1
-```
+- Make sure you have the project set up:
+
+  ```bash
+  gcloud config set project TU_PROJECT_ID
+  ```
+
+- Enable necessary APIs (if you haven't done so already)
+
+  ```bash
+  gcloud services enable \
+    cloudfunctions.googleapis.com \
+    cloudbuild.googleapis.com \
+    artifactregistry.googleapis.com
+  ```
+
+- Deploy the function:
+
+  ```bash
+  gcloud functions deploy helloHttp \
+    --gen2 \
+    --runtime=nodejs20 \
+    --region=us-central1 \
+    --trigger-http \
+    --allow-unauthenticated
+  ```
+
+- Quick explanation:
+
+  ```text
+  --gen2 → uses Cloud Functions 2nd gen (based on Cloud Run + Eventarc).
+  --runtime=nodejs20 → runtime version.
+  --trigger-http → HTTP function.
+  --allow-unauthenticated → anyone can invoke it (public API type).
+  ```
+
+#### Test:
+
+- From the browser
+
+  ```text
+  https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp
+  ```
+
+  ```json
+  {
+    "message": "Hola, Cloud Engineer! 👋",
+    "service": "Cloud Functions (2nd gen)",
+    "method": "GET",
+    "timestamp": "2025-11-21T00:00:00.000Z"
+  }
+  ```
+
+- With the name parameter in the query
+
+  ```text
+  https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp?name=User
+  ```
+
+  ```json
+  {
+    "message": "Hola, User! 👋",
+    ...
+  }
+  ```
+
+- With curl sending JSON to the body
+
+  ```bash
+  curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"name":"Student GCP"}' \
+    https://us-central1-PROJECT_ID.cloudfunctions.net/helloHttp
+  ```
+
+- View logs in Cloud Logging
+
+  ```bash
+  gcloud functions logs read helloHttp --gen2 --region=us-central1
+  ```
 
 ---
 
@@ -369,6 +476,7 @@ gcloud run deploy demo-cloudrun-docker \
 ```
 
 #### Test:
+
 ```bash
 https://demo-cloudrun-docker-xxxxxxxxx-uc.a.run.app
 ```
