@@ -83,7 +83,20 @@ Features:
 
 ---
 
-### 2.2 Autoscaling Example
+### 2.2 Autoscaling 
+
+Types of autoscaling:
+- CPU utilization
+- Load balancing capacity
+- Cloud Monitoring custom metrics
+- Predictive autoscaling
+
+Features:
+- Automatic scaling.
+- Pay-per-call.
+- Ideal for micro-tasks.
+
+Example:
 
 ```bash
 gcloud compute instance-groups managed set-autoscaling my-mig \
@@ -103,11 +116,16 @@ gcloud compute instance-groups managed set-autoscaling my-mig \
 Event-driven serverless functions.
 
 Triggers:
-- HTTP  
-- Pub/Sub  
-- Storage  
-- Firebase  
-- Cloud Scheduler  
+- Pub/Sub
+- HTTP
+- Storage events
+- Firebase
+- Cron jobs
+
+Features:
+- Automatic scaling.
+- Pay-per-call.
+- Ideal for micro-tasks.
 
 Example:
 
@@ -124,6 +142,11 @@ gcloud functions deploy helloWorld \
 
 Serverless container platform.  
 Supports any dockerized application.
+
+Advantages:
+- Auto-scales from 0 to N.
+- Built-in security.
+- Easy integration with Cloud Build.
 
 Example:
 
@@ -188,11 +211,84 @@ gcloud functions deploy helloWorld \
 
 ### 4.3 Deploy an App on Cloud Run
 
+index.js
 ```javascript
-const express = require('express')
-const app = express()
-app.get('/', (req, res) => res.send('Hello from Cloud Run!'))
-app.listen(process.env.PORT || 8080)
+const express = require("express");
+const app = express();
+
+// Puerto que usará Cloud Run (viene por variable de entorno)
+const PORT = process.env.PORT || 8080;
+
+app.get("/", (req, res) => {
+  res.send("Hola desde Cloud Run con Docker 🚀");
+});
+
+// Ejemplo de endpoint extra
+app.get("/saludo/:nombre", (req, res) => {
+  const nombre = req.params.nombre;
+  res.json({
+    mensaje: `Hola, ${nombre}!`,
+    origen: "Cloud Run (Docker)",
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
+});
+```
+
+package.json
+```json
+{
+  "name": "demo-cloudrun-docker",
+  "version": "1.0.0",
+  "description": "Demo de Cloud Run usando Docker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  }
+}
+```
+
+.dockerignore
+```bash
+node_modules
+npm-debug.log
+Dockerfile
+.git
+.gitignore
+README.md
+```
+
+Dockerfile
+```bash
+# Imagen base de Node
+FROM node:20-slim
+
+# Crear directorio de la app
+WORKDIR /usr/src/app
+
+# Copiar package.json y package-lock.json si existe
+COPY package*.json ./
+
+# Instalar solo dependencias de producción
+RUN npm install --only=production
+
+# Copiar el resto del código
+COPY . .
+
+# Cloud Run inyecta PORT, tu app debe escuchar en este puerto
+ENV PORT=8080
+
+# Exponer puerto (informativo)
+EXPOSE 8080
+
+# Comando de inicio
+CMD [ "npm", "start" ]
 ```
 
 Deploy:
@@ -206,7 +302,7 @@ gcloud run deploy demo-cloudrun \
 
 ---
 
-# 🧹 5. Resource Cleanup (Highly Recommended)
+# 🧹 5. Resource Cleanup
 
 To avoid unnecessary costs, delete all created resources:
 
