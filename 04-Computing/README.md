@@ -189,12 +189,22 @@ gcloud compute firewall-rules create allow-http \
 
 ### 4.2 Deploy a Cloud Function
 
-Node.js sample:
+index.js
 
 ```javascript
 exports.helloWorld = (req, res) => {
   res.send("Hello from Cloud Functions 🚀");
 };
+```
+
+package.json
+
+```json
+{
+  "name": "demo-function",
+  "version": "1.0.0",
+  "main": "index.js"
+}
 ```
 
 Deploy:
@@ -211,6 +221,18 @@ gcloud functions deploy helloWorld \
 
 ### 4.3 Deploy an App on Cloud Run
 
+#### Project structure
+
+```text
+demo-cloudrun-docker/
+├── Dockerfile
+├── .dockerignore
+├── package.json
+└── index.js
+```
+
+#### Application code
+
 index.js
 ```javascript
 const express = require("express");
@@ -220,21 +242,21 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.get("/", (req, res) => {
-  res.send("Hola desde Cloud Run con Docker 🚀");
+  res.send("Hello from Cloud Run with Docker 🚀");
 });
 
 // Ejemplo de endpoint extra
-app.get("/saludo/:nombre", (req, res) => {
-  const nombre = req.params.nombre;
+app.get("/saludo/:name", (req, res) => {
+  const name = req.params.name;
   res.json({
-    mensaje: `Hola, ${nombre}!`,
+    mensaje: `Hola, ${name}!`,
     origen: "Cloud Run (Docker)",
     timestamp: new Date().toISOString()
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
 ```
 
@@ -243,7 +265,7 @@ package.json
 {
   "name": "demo-cloudrun-docker",
   "version": "1.0.0",
-  "description": "Demo de Cloud Run usando Docker",
+  "description": "Cloud Run demo using Docker",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -266,38 +288,89 @@ README.md
 
 Dockerfile
 ```bash
-# Imagen base de Node
+# Base Node image
 FROM node:20-slim
 
-# Crear directorio de la app
+# Create app directory
 WORKDIR /usr/src/app
 
-# Copiar package.json y package-lock.json si existe
+# Copy package.json and package-lock.json if they exist
 COPY package*.json ./
 
-# Instalar solo dependencias de producción
+# Install only production dependencies
 RUN npm install --only=production
 
-# Copiar el resto del código
+# Copy the rest of the code
 COPY . .
 
-# Cloud Run inyecta PORT, tu app debe escuchar en este puerto
+# Cloud Run injects a port; your app should listen on this port
 ENV PORT=8080
 
-# Exponer puerto (informativo)
+# Expose port (for informational purposes)
 EXPOSE 8080
 
-# Comando de inicio
+# Startup command
 CMD [ "npm", "start" ]
 ```
 
-Deploy:
+#### Build the image:
 
 ```bash
-gcloud run deploy demo-cloudrun \
-  --source=. \
-  --allow-unauthenticated \
-  --region=us-central1
+docker build -t demo-cloudrun-docker .
+```
+
+#### Upload the image to Artifact Registry:
+
+- Enable necessary APIs (if you haven't done so already)
+
+  ```bash
+  gcloud services enable artifactregistry.googleapis.com run.googleapis.com
+  ```
+
+- Create repository in Artifact Registry
+
+  ```bash
+  gcloud artifacts repositories create docker-repo \
+    --repository-format=docker \
+    --location=us-central1 \
+    --description="Image repository for Cloud Run"
+  ```
+
+- Authenticate to Artifact Registry using Docker
+
+  ```bash
+  gcloud auth configure-docker us-central1-docker.pkg.dev
+  ```
+
+- Tag the image
+
+  ```bash
+  PROJECT_ID=$(gcloud config get-value project)
+
+  docker tag demo-cloudrun-docker \
+    us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1
+  ```
+
+- Upload the image
+
+  ```bash
+  docker push \
+    us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1
+  ```
+
+#### Deploy to Cloud Run (using Docker image):
+
+```bash
+gcloud run deploy demo-cloudrun-docker \
+  --image=us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1 \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated
+```
+
+#### Test:
+```bash
+https://demo-cloudrun-docker-xxxxxxxxx-uc.a.run.app
 ```
 
 ---
@@ -338,4 +411,5 @@ gcloud compute instance-templates delete my-template --quiet
 ---
 
 This module provides a complete journey through traditional compute, autoscaling, and serverless paradigms in GCP.  
+
 Happy learning! 🚀

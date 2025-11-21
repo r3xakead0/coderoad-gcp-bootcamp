@@ -27,6 +27,8 @@ Componentes principales:
 	•	Firewalls: basados en tags.
 	•	Service Accounts: permisos para las apps.
 
+---
+
 ### 1.2 Imágenes (Images)
 
 Una imagen es el estado base de un disco, normalmente SO + paquetes mínimos.
@@ -36,12 +38,14 @@ Tipos:
 - Imágenes personalizadas: creadas a partir de una VM ya configurada.
 - Family Images: siempre apuntan a la última versión estable.
 
+---
+
 ### 1.3 Snapshots
 
 Un snapshot es una copia incremental del disco.
 Sirve para respaldo o migraciones rápidas.
 
-Ejemplo (CLI):
+Ejemplo:
 
 ```bash
 gcloud compute disks snapshot my-disk \
@@ -68,11 +72,14 @@ Estas plantillas permiten crear grupos manejados (MIG) con autoescalado.
 ### 2.1 ¿Qué es un MIG?
 
 Un Managed Instance Group es un conjunto de VMs creadas desde una plantilla.
+
 Permite:
 - Autoescalado horizontal (añadir o quitar VMs).
 - Health checks automáticos.
 - Actualizaciones automáticas (rolling updates).
 - Integración con Load Balancer.
+
+---
 
 ### 2.2 Autoescalado
 
@@ -82,7 +89,12 @@ Tipos de autoescalado:
 - Cloud Monitoring métricas personalizadas
 - Predictive autoscaling
 
-Ejemplo (CLI):
+Características:
+- Escalado automático.
+- Pago por llamada.
+- Ideal para microtareas.
+
+Ejemplo:
 
 ```bash
 gcloud compute instance-groups managed set-autoscaling my-mig \
@@ -100,6 +112,8 @@ gcloud compute instance-groups managed set-autoscaling my-mig \
 ### 3.1 Cloud Functions
 
 Modelo FaaS. Ejecutas funciones que responden a eventos:
+
+Desencadenantes:
 - Pub/Sub
 - HTTP
 - Storage events
@@ -111,7 +125,7 @@ Características:
 - Pago por invocación.
 - Ideal para micro-tareas.
 
-Ejemplo (CLI):
+Ejemplo:
 
 ```bash
 gcloud functions deploy helloWorld \
@@ -119,6 +133,8 @@ gcloud functions deploy helloWorld \
   --trigger-http \
   --allow-unauthenticated
 ```
+
+---
 
 ### 3.2 Cloud Run
 
@@ -130,7 +146,7 @@ Ventajas:
 - Seguridad integrada.
 - Fácil integración con Cloud Build.
 
-Ejemplo (CLI):
+Ejemplo:
 
 ```bash
 gcloud run deploy my-app \
@@ -167,9 +183,9 @@ gcloud compute firewall-rules create allow-http \
   --target-tags=http-server
 ```
 
-### 4.2 Desplegar una app en Cloud Function
+---
 
-Código simple (Node.js)
+### 4.2 Desplegar una app en Cloud Function
 
 index.js
 
@@ -189,7 +205,7 @@ package.json
 }
 ```
 
-Desplegar
+Desplegar:
 
 ```bash
 gcloud functions deploy helloWorld \
@@ -199,26 +215,160 @@ gcloud functions deploy helloWorld \
   --region=us-central1
 ```
 
+---
+
 ### 4.3 Desplegar una app en Cloud Run
 
-Código simple (Node.js)
+#### Estructura del proyecto
 
-index.js
-
-```javascript
-const express = require('express')
-const app = express()
-app.get('/', (req, res) => res.send('Hola desde Cloud Run!'))
-app.listen(process.env.PORT || 8080)
+```text
+demo-cloudrun-docker/
+├── Dockerfile
+├── .dockerignore
+├── package.json
+└── index.js
 ```
 
-Desplegar
+#### Codigo de la aplicación
+
+index.js
+```javascript
+const express = require("express");
+const app = express();
+
+// Puerto que usará Cloud Run (viene por variable de entorno)
+const PORT = process.env.PORT || 8080;
+
+app.get("/", (req, res) => {
+  res.send("Hola desde Cloud Run con Docker 🚀");
+});
+
+// Ejemplo de endpoint extra
+app.get("/saludo/:nombre", (req, res) => {
+  const nombre = req.params.nombre;
+  res.json({
+    mensaje: `Hola, ${nombre}!`,
+    origen: "Cloud Run (Docker)",
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto ${PORT}`);
+});
+```
+
+package.json
+```json
+{
+  "name": "demo-cloudrun-docker",
+  "version": "1.0.0",
+  "description": "Demo de Cloud Run usando Docker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.0"
+  }
+}
+```
+
+.dockerignore
+```bash
+node_modules
+npm-debug.log
+Dockerfile
+.git
+.gitignore
+README.md
+```
+
+Dockerfile
+```bash
+# Imagen base de Node
+FROM node:20-slim
+
+# Crear directorio de la app
+WORKDIR /usr/src/app
+
+# Copiar package.json y package-lock.json si existe
+COPY package*.json ./
+
+# Instalar solo dependencias de producción
+RUN npm install --only=production
+
+# Copiar el resto del código
+COPY . .
+
+# Cloud Run inyecta PORT, tu app debe escuchar en este puerto
+ENV PORT=8080
+
+# Exponer puerto (informativo)
+EXPOSE 8080
+
+# Comando de inicio
+CMD [ "npm", "start" ]
+```
+
+#### Construir la imagen:
 
 ```bash
-gcloud run deploy demo-cloudrun \
-  --source=. \
-  --allow-unauthenticated \
-  --region=us-central1
+docker build -t demo-cloudrun-docker .
+```
+
+#### Subir la imagen a Artifact Registry:
+
+- Habilitar APIs necesarias (si no lo hiciste antes)
+
+  ```bash
+  gcloud services enable artifactregistry.googleapis.com run.googleapis.com
+  ```
+
+- Crear repositorio en Artifact Registry
+
+  ```bash
+  gcloud artifacts repositories create docker-repo \
+    --repository-format=docker \
+    --location=us-central1 \
+    --description="Repo de imágenes para Cloud Run"
+  ```
+
+- Autenticarse con Docker a Artifact Registry
+
+  ```bash
+  gcloud auth configure-docker us-central1-docker.pkg.dev
+  ```
+
+- Etiquetar la imagen
+
+  ```bash
+  PROJECT_ID=$(gcloud config get-value project)
+
+  docker tag demo-cloudrun-docker \
+    us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1
+  ```
+
+- Subir la imagen
+
+  ```bash
+  docker push \
+    us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1
+  ```
+
+#### Desplegar en Cloud Run (con imagen Docker):
+
+```bash
+gcloud run deploy demo-cloudrun-docker \
+  --image=us-central1-docker.pkg.dev/$PROJECT_ID/docker-repo/demo-cloudrun-docker:v1 \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated
+```
+
+#### Test:
+```bash
+https://demo-cloudrun-docker-xxxxxxxxx-uc.a.run.app
 ```
 
 ---
@@ -228,7 +378,6 @@ gcloud run deploy demo-cloudrun \
 Para evitar costes innecesarios, elimine todos los recursos creados:
 
 ### Eliminar VM
-
 ```bash
 gcloud compute instances delete demo-vm \  
   --zone=us-central1-a --quiet
